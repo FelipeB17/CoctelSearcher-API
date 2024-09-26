@@ -1,12 +1,86 @@
-/* styles.css */
-
-/* Ejemplo de estilos personalizados */
 body {
     background-color: #f8f9fa;
-    padding-top: 50px;
+    font-family: 'Arial', sans-serif;
 }
 
-.card-img-top {
-    height: 200px;
+.cocktail-card {
+    height: 100%;
+    transition: transform 0.3s ease-in-out;
+    border: none;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cocktail-card:hover {
+    transform: translateY(-5px);
+}
+
+.cocktail-card img {
+    max-height: 200px;
     object-fit: cover;
+}
+
+.ingredient-img {
+    max-width: 100px;
+    max-height: 100px;
+}
+
+.btn-primary {
+    background-color: #ff6b6b;
+    border-color: #ff6b6b;
+}
+
+.btn-primary:hover {
+    background-color: #ff5252;
+    border-color: #ff5252;
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+header {
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+}
+
+header h1 {
+    font-family: 'Pacifico', cursive;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.form-select, .form-control {
+    border-radius: 20px;
+}
+
+#search-button {
+    border-radius: 20px;
+    font-weight: bold;
+}
+
+footer {
+    background: linear-gradient(135deg, #ff6b6b, #feca57);
+    width: 100%;
+    text-align: center;
+}
+
+/* Decorative elements */
+.cocktail-icon {
+    position: absolute;
+    opacity: 0.1;
+    z-index: -1;
+}
+
+.cocktail-icon-1 {
+    top: 10%;
+    left: 5%;
+    font-size: 4rem;
+    transform: rotate(-15deg);
+}
+
+.cocktail-icon-2 {
+    bottom: 15%;
+    right: 7%;
+    font-size: 5rem;
+    transform: rotate(20deg);
 }
