@@ -4,14 +4,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const ingredientSelect = document.getElementById('ingredient');
     const searchForm = document.getElementById('search-form');
     const resultsDiv = document.getElementById('results');
-    
+
     // Función para cargar ingredientes
     const loadIngredients = async () => {
         try {
             const response = await fetch('https://www.thecocktaildb.com/api/json/v1/1/list.php?i=list');
             const data = await response.json();
             const ingredients = data.drinks;
-            
+
             ingredients.forEach(ingredient => {
                 const option = document.createElement('option');
                 option.value = ingredient.strIngredient1;
@@ -22,8 +22,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error al cargar ingredientes:', error);
         }
     };
-    
-    // Función para buscar cócteles
+
+    // Función para buscar cócteles por nombre
     const searchCocktails = async (query) => {
         try {
             const response = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/search.php?s=${query}`);
@@ -34,76 +34,91 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
     };
-    
-    // Función para filtrar por ingrediente y tipo
-    const filterCocktails = (cocktails, ingredient, type) => {
-        return cocktails.filter(cocktail => {
-            const hasIngredient = ingredient ? cocktail.strIngredient1.toLowerCase() === ingredient.toLowerCase() ||
-                cocktail.strIngredient2?.toLowerCase() === ingredient.toLowerCase() ||
-                cocktail.strIngredient3?.toLowerCase() === ingredient.toLowerCase() ||
-                cocktail.strIngredient4?.toLowerCase() === ingredient.toLowerCase() ||
-                cocktail.strIngredient5?.toLowerCase() === ingredient.toLowerCase() : true;
-            const matchesType = type ? cocktail.strAlcoholic === type : true;
-            return hasIngredient && matchesType;
-        });
+
+    // Función para obtener detalles completos del cóctel
+    const getCocktailDetails = async (id) => {
+        try {
+            const response = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${id}`);
+            const data = await response.json();
+            return data.drinks[0];  // Solo necesitamos el primer cóctel
+        } catch (error) {
+            console.error('Error al obtener detalles del cóctel:', error);
+            return null;
+        }
     };
-    
+
     // Función para mostrar resultados
-    const displayResults = (cocktails) => {
+    const displayResults = async (cocktails) => {
         resultsDiv.innerHTML = ''; // Limpiar resultados anteriores
-        
+
         if (!cocktails || cocktails.length === 0) {
             resultsDiv.innerHTML = '<p class="text-center">No se encontraron cócteles.</p>';
             return;
         }
-        
-        cocktails.forEach(cocktail => {
-            const col = document.createElement('div');
-            col.className = 'col-md-4 mb-4';
-            
-            const card = document.createElement('div');
-            card.className = 'card h-100';
-            
-            const img = document.createElement('img');
-            img.src = cocktail.strDrinkThumb;
-            img.className = 'card-img-top';
-            img.alt = cocktail.strDrink;
-            
-            const cardBody = document.createElement('div');
-            cardBody.className = 'card-body';
-            
-            const cardTitle = document.createElement('h5');
-            cardTitle.className = 'card-title';
-            cardTitle.textContent = cocktail.strDrink;
-            
-            const cardText = document.createElement('p');
-            cardText.className = 'card-text';
-            cardText.textContent = `Tipo: ${cocktail.strAlcoholic}`;
-            
-            cardBody.appendChild(cardTitle);
-            cardBody.appendChild(cardText);
-            card.appendChild(img);
-            card.appendChild(cardBody);
-            col.appendChild(card);
-            resultsDiv.appendChild(col);
-        });
+
+        for (const cocktail of cocktails) {
+            // Obtener detalles completos del cóctel si no están ya presentes
+            const cocktailDetails = cocktail.strAlcoholic ? cocktail : await getCocktailDetails(cocktail.idDrink);
+
+            if (cocktailDetails) {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-4';
+
+                const card = document.createElement('div');
+                card.className = 'card h-100';
+
+                const img = document.createElement('img');
+                img.src = cocktailDetails.strDrinkThumb;
+                img.className = 'card-img-top';
+                img.alt = cocktailDetails.strDrink;
+
+                const cardBody = document.createElement('div');
+                cardBody.className = 'card-body';
+
+                const cardTitle = document.createElement('h5');
+                cardTitle.className = 'card-title';
+                cardTitle.textContent = cocktailDetails.strDrink;
+
+                const cardText = document.createElement('p');
+                cardText.className = 'card-text';
+                cardText.textContent = `Tipo: ${cocktailDetails.strAlcoholic || 'Desconocido'}`;
+
+                cardBody.appendChild(cardTitle);
+                cardBody.appendChild(cardText);
+                card.appendChild(img);
+                card.appendChild(cardBody);
+                col.appendChild(card);
+                resultsDiv.appendChild(col);
+            }
+        }
     };
-    
+
+    // Función para mostrar mensajes de error
+    const showMessage = (message, type = 'danger') => {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} mt-3`;
+        alertDiv.textContent = message;
+        document.querySelector('.container').prepend(alertDiv);
+        setTimeout(() => alertDiv.remove(), 3000);
+    };
+
     // Manejar el evento de envío del formulario
     searchForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         const ingredient = ingredientSelect.value;
         const type = document.getElementById('type').value;
         const name = document.getElementById('name').value.trim();
-        
-        if (!ingredient && !type && !name) {
-            alert('Por favor, ingresa al menos un criterio de búsqueda.');
+
+        // Verificar si hay más de un campo lleno
+        const filledFields = [ingredient, type, name].filter(value => value !== '');
+        if (filledFields.length > 1) {
+            showMessage('Solo puedes buscar por un criterio (ingrediente, tipo o nombre).', 'warning');
             return;
         }
-        
+
         let cocktails = [];
-        
+
         if (name) {
             cocktails = await searchCocktails(name);
         } else if (ingredient) {
@@ -115,22 +130,20 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (error) {
                 console.error('Error al buscar por ingrediente:', error);
             }
+        } else if (type) {
+            // Buscar por tipo sin nombre ni ingrediente
+            try {
+                const response = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/filter.php?a=${type}`);
+                const data = await response.json();
+                cocktails = data.drinks;
+            } catch (error) {
+                console.error('Error al buscar por tipo:', error);
+            }
         }
-        
-        // Si se proporciona tipo, filtrar los resultados
-        if (type && cocktails) {
-            // Para filtrar por tipo, necesitamos detalles completos de cada cóctel
-            const detailedCocktails = await Promise.all(cocktails.map(async (cocktail) => {
-                const res = await fetch(`https://www.thecocktaildb.com/api/json/v1/1/lookup.php?i=${cocktail.idDrink}`);
-                const detailData = await res.json();
-                return detailData.drinks ? detailData.drinks[0] : null;
-            }));
-            cocktails = detailedCocktails.filter(cocktail => cocktail && cocktail.strAlcoholic === type);
-        }
-        
-        displayResults(cocktails);
+
+        await displayResults(cocktails);
     });
-    
+
     // Cargar ingredientes al iniciar
     loadIngredients();
 });
